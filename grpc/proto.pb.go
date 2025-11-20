@@ -25,7 +25,8 @@ type BidAmount struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Timestamp     int64                  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	BidAmount     int64                  `protobuf:"varint,3,opt,name=bid_amount,json=bidAmount,proto3" json:"bid_amount,omitempty"`
+	Bidder        int64                  `protobuf:"varint,3,opt,name=bidder,proto3" json:"bidder,omitempty"`
+	BidAmount     int64                  `protobuf:"varint,4,opt,name=bid_amount,json=bidAmount,proto3" json:"bid_amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,6 +71,13 @@ func (x *BidAmount) GetId() int64 {
 func (x *BidAmount) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *BidAmount) GetBidder() int64 {
+	if x != nil {
+		return x.Bidder
 	}
 	return 0
 }
@@ -136,8 +144,9 @@ func (x *BidAck) GetTimestamp() int64 {
 type AuctionResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HighestBid    int64                  `protobuf:"varint,1,opt,name=highest_bid,json=highestBid,proto3" json:"highest_bid,omitempty"`
-	Winner        int64                  `protobuf:"varint,2,opt,name=winner,proto3" json:"winner,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	HighestBidder int64                  `protobuf:"varint,2,opt,name=highest_bidder,json=highestBidder,proto3" json:"highest_bidder,omitempty"`
+	AuctionOver   bool                   `protobuf:"varint,3,opt,name=auction_over,json=auctionOver,proto3" json:"auction_over,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -179,11 +188,18 @@ func (x *AuctionResult) GetHighestBid() int64 {
 	return 0
 }
 
-func (x *AuctionResult) GetWinner() int64 {
+func (x *AuctionResult) GetHighestBidder() int64 {
 	if x != nil {
-		return x.Winner
+		return x.HighestBidder
 	}
 	return 0
+}
+
+func (x *AuctionResult) GetAuctionOver() bool {
+	if x != nil {
+		return x.AuctionOver
+	}
+	return false
 }
 
 func (x *AuctionResult) GetTimestamp() int64 {
@@ -525,20 +541,22 @@ var File_proto_proto protoreflect.FileDescriptor
 
 const file_proto_proto_rawDesc = "" +
 	"\n" +
-	"\vproto.proto\"X\n" +
+	"\vproto.proto\"p\n" +
 	"\tBidAmount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\x12\x1d\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\x12\x16\n" +
+	"\x06bidder\x18\x03 \x01(\x03R\x06bidder\x12\x1d\n" +
 	"\n" +
-	"bid_amount\x18\x03 \x01(\x03R\tbidAmount\"B\n" +
+	"bid_amount\x18\x04 \x01(\x03R\tbidAmount\"B\n" +
 	"\x06BidAck\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"f\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\x98\x01\n" +
 	"\rAuctionResult\x12\x1f\n" +
 	"\vhighest_bid\x18\x01 \x01(\x03R\n" +
-	"highestBid\x12\x16\n" +
-	"\x06winner\x18\x02 \x01(\x03R\x06winner\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"\a\n" +
+	"highestBid\x12%\n" +
+	"\x0ehighest_bidder\x18\x02 \x01(\x03R\rhighestBidder\x12!\n" +
+	"\fauction_over\x18\x03 \x01(\bR\vauctionOver\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\a\n" +
 	"\x05Empty\"\xf4\x01\n" +
 	"\rReplicaUpdate\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12%\n" +
@@ -560,13 +578,12 @@ const file_proto_proto_rawDesc = "" +
 	"\x10ElectionResponse\x12%\n" +
 	"\x0esender_greater\x18\x01 \x01(\bR\rsenderGreater\"\x18\n" +
 	"\x06Leader\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id2G\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id2\xd1\x01\n" +
 	"\aAuction\x12\x1a\n" +
 	"\x03Bid\x12\n" +
 	".BidAmount\x1a\a.BidAck\x12 \n" +
-	"\x06Result\x12\x06.Empty\x1a\x0e.AuctionResult2\x8c\x01\n" +
-	"\aReplica\x12\x1f\n" +
-	"\x06Update\x12\r.ReplicaState\x1a\x06.Empty\x124\n" +
+	"\x06Result\x12\x06.Empty\x1a\x0e.AuctionResult\x12&\n" +
+	"\rUpdateReplica\x12\r.ReplicaState\x1a\x06.Empty\x124\n" +
 	"\rStartElection\x12\x10.ReplicaIdentity\x1a\x11.ElectionResponse\x12*\n" +
 	"\x10ElectionFinished\x12\a.Leader\x1a\r.ReplicaStateB\x0eZ\fauction/grpcb\x06proto3"
 
@@ -599,14 +616,14 @@ var file_proto_proto_depIdxs = []int32{
 	5, // 1: ReplicaState.identity:type_name -> ReplicaIdentity
 	0, // 2: Auction.Bid:input_type -> BidAmount
 	3, // 3: Auction.Result:input_type -> Empty
-	6, // 4: Replica.Update:input_type -> ReplicaState
-	5, // 5: Replica.StartElection:input_type -> ReplicaIdentity
-	8, // 6: Replica.ElectionFinished:input_type -> Leader
+	6, // 4: Auction.UpdateReplica:input_type -> ReplicaState
+	5, // 5: Auction.StartElection:input_type -> ReplicaIdentity
+	8, // 6: Auction.ElectionFinished:input_type -> Leader
 	1, // 7: Auction.Bid:output_type -> BidAck
 	2, // 8: Auction.Result:output_type -> AuctionResult
-	3, // 9: Replica.Update:output_type -> Empty
-	7, // 10: Replica.StartElection:output_type -> ElectionResponse
-	6, // 11: Replica.ElectionFinished:output_type -> ReplicaState
+	3, // 9: Auction.UpdateReplica:output_type -> Empty
+	7, // 10: Auction.StartElection:output_type -> ElectionResponse
+	6, // 11: Auction.ElectionFinished:output_type -> ReplicaState
 	7, // [7:12] is the sub-list for method output_type
 	2, // [2:7] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -627,7 +644,7 @@ func file_proto_proto_init() {
 			NumEnums:      0,
 			NumMessages:   9,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_proto_proto_goTypes,
 		DependencyIndexes: file_proto_proto_depIdxs,

@@ -19,8 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auction_Bid_FullMethodName    = "/Auction/Bid"
-	Auction_Result_FullMethodName = "/Auction/Result"
+	Auction_Bid_FullMethodName              = "/Auction/Bid"
+	Auction_Result_FullMethodName           = "/Auction/Result"
+	Auction_UpdateReplica_FullMethodName    = "/Auction/UpdateReplica"
+	Auction_StartElection_FullMethodName    = "/Auction/StartElection"
+	Auction_ElectionFinished_FullMethodName = "/Auction/ElectionFinished"
 )
 
 // AuctionClient is the client API for Auction service.
@@ -29,6 +32,9 @@ const (
 type AuctionClient interface {
 	Bid(ctx context.Context, in *BidAmount, opts ...grpc.CallOption) (*BidAck, error)
 	Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuctionResult, error)
+	UpdateReplica(ctx context.Context, in *ReplicaState, opts ...grpc.CallOption) (*Empty, error)
+	StartElection(ctx context.Context, in *ReplicaIdentity, opts ...grpc.CallOption) (*ElectionResponse, error)
+	ElectionFinished(ctx context.Context, in *Leader, opts ...grpc.CallOption) (*ReplicaState, error)
 }
 
 type auctionClient struct {
@@ -59,12 +65,45 @@ func (c *auctionClient) Result(ctx context.Context, in *Empty, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *auctionClient) UpdateReplica(ctx context.Context, in *ReplicaState, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, Auction_UpdateReplica_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *auctionClient) StartElection(ctx context.Context, in *ReplicaIdentity, opts ...grpc.CallOption) (*ElectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ElectionResponse)
+	err := c.cc.Invoke(ctx, Auction_StartElection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *auctionClient) ElectionFinished(ctx context.Context, in *Leader, opts ...grpc.CallOption) (*ReplicaState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReplicaState)
+	err := c.cc.Invoke(ctx, Auction_ElectionFinished_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuctionServer is the server API for Auction service.
 // All implementations must embed UnimplementedAuctionServer
 // for forward compatibility.
 type AuctionServer interface {
 	Bid(context.Context, *BidAmount) (*BidAck, error)
 	Result(context.Context, *Empty) (*AuctionResult, error)
+	UpdateReplica(context.Context, *ReplicaState) (*Empty, error)
+	StartElection(context.Context, *ReplicaIdentity) (*ElectionResponse, error)
+	ElectionFinished(context.Context, *Leader) (*ReplicaState, error)
 	mustEmbedUnimplementedAuctionServer()
 }
 
@@ -80,6 +119,15 @@ func (UnimplementedAuctionServer) Bid(context.Context, *BidAmount) (*BidAck, err
 }
 func (UnimplementedAuctionServer) Result(context.Context, *Empty) (*AuctionResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Result not implemented")
+}
+func (UnimplementedAuctionServer) UpdateReplica(context.Context, *ReplicaState) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateReplica not implemented")
+}
+func (UnimplementedAuctionServer) StartElection(context.Context, *ReplicaIdentity) (*ElectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartElection not implemented")
+}
+func (UnimplementedAuctionServer) ElectionFinished(context.Context, *Leader) (*ReplicaState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ElectionFinished not implemented")
 }
 func (UnimplementedAuctionServer) mustEmbedUnimplementedAuctionServer() {}
 func (UnimplementedAuctionServer) testEmbeddedByValue()                 {}
@@ -138,6 +186,60 @@ func _Auction_Result_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auction_UpdateReplica_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplicaState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServer).UpdateReplica(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auction_UpdateReplica_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServer).UpdateReplica(ctx, req.(*ReplicaState))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auction_StartElection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplicaIdentity)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServer).StartElection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auction_StartElection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServer).StartElection(ctx, req.(*ReplicaIdentity))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auction_ElectionFinished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Leader)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServer).ElectionFinished(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auction_ElectionFinished_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServer).ElectionFinished(ctx, req.(*Leader))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auction_ServiceDesc is the grpc.ServiceDesc for Auction service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -153,183 +255,17 @@ var Auction_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Result",
 			Handler:    _Auction_Result_Handler,
 		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto.proto",
-}
-
-const (
-	Replica_Update_FullMethodName           = "/Replica/Update"
-	Replica_StartElection_FullMethodName    = "/Replica/StartElection"
-	Replica_ElectionFinished_FullMethodName = "/Replica/ElectionFinished"
-)
-
-// ReplicaClient is the client API for Replica service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ReplicaClient interface {
-	Update(ctx context.Context, in *ReplicaState, opts ...grpc.CallOption) (*Empty, error)
-	StartElection(ctx context.Context, in *ReplicaIdentity, opts ...grpc.CallOption) (*ElectionResponse, error)
-	ElectionFinished(ctx context.Context, in *Leader, opts ...grpc.CallOption) (*ReplicaState, error)
-}
-
-type replicaClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewReplicaClient(cc grpc.ClientConnInterface) ReplicaClient {
-	return &replicaClient{cc}
-}
-
-func (c *replicaClient) Update(ctx context.Context, in *ReplicaState, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, Replica_Update_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *replicaClient) StartElection(ctx context.Context, in *ReplicaIdentity, opts ...grpc.CallOption) (*ElectionResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ElectionResponse)
-	err := c.cc.Invoke(ctx, Replica_StartElection_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *replicaClient) ElectionFinished(ctx context.Context, in *Leader, opts ...grpc.CallOption) (*ReplicaState, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReplicaState)
-	err := c.cc.Invoke(ctx, Replica_ElectionFinished_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ReplicaServer is the server API for Replica service.
-// All implementations must embed UnimplementedReplicaServer
-// for forward compatibility.
-type ReplicaServer interface {
-	Update(context.Context, *ReplicaState) (*Empty, error)
-	StartElection(context.Context, *ReplicaIdentity) (*ElectionResponse, error)
-	ElectionFinished(context.Context, *Leader) (*ReplicaState, error)
-	mustEmbedUnimplementedReplicaServer()
-}
-
-// UnimplementedReplicaServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedReplicaServer struct{}
-
-func (UnimplementedReplicaServer) Update(context.Context, *ReplicaState) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
-}
-func (UnimplementedReplicaServer) StartElection(context.Context, *ReplicaIdentity) (*ElectionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartElection not implemented")
-}
-func (UnimplementedReplicaServer) ElectionFinished(context.Context, *Leader) (*ReplicaState, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ElectionFinished not implemented")
-}
-func (UnimplementedReplicaServer) mustEmbedUnimplementedReplicaServer() {}
-func (UnimplementedReplicaServer) testEmbeddedByValue()                 {}
-
-// UnsafeReplicaServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ReplicaServer will
-// result in compilation errors.
-type UnsafeReplicaServer interface {
-	mustEmbedUnimplementedReplicaServer()
-}
-
-func RegisterReplicaServer(s grpc.ServiceRegistrar, srv ReplicaServer) {
-	// If the following call pancis, it indicates UnimplementedReplicaServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&Replica_ServiceDesc, srv)
-}
-
-func _Replica_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReplicaState)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReplicaServer).Update(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Replica_Update_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicaServer).Update(ctx, req.(*ReplicaState))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Replica_StartElection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReplicaIdentity)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReplicaServer).StartElection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Replica_StartElection_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicaServer).StartElection(ctx, req.(*ReplicaIdentity))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Replica_ElectionFinished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Leader)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReplicaServer).ElectionFinished(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Replica_ElectionFinished_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicaServer).ElectionFinished(ctx, req.(*Leader))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Replica_ServiceDesc is the grpc.ServiceDesc for Replica service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Replica_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Replica",
-	HandlerType: (*ReplicaServer)(nil),
-	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Update",
-			Handler:    _Replica_Update_Handler,
+			MethodName: "UpdateReplica",
+			Handler:    _Auction_UpdateReplica_Handler,
 		},
 		{
 			MethodName: "StartElection",
-			Handler:    _Replica_StartElection_Handler,
+			Handler:    _Auction_StartElection_Handler,
 		},
 		{
 			MethodName: "ElectionFinished",
-			Handler:    _Replica_ElectionFinished_Handler,
+			Handler:    _Auction_ElectionFinished_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
