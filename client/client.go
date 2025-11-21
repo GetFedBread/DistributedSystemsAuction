@@ -2,12 +2,22 @@ package main
 
 import (
 	proto "auction/grpc"
+	"bufio"
 	"context"
 	"log"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+var id int64
+var wait_group = &sync.WaitGroup{}
 
 func main() {
 	println("Starting client")
@@ -16,32 +26,55 @@ func main() {
 		log.Fatal(err)
 	}
 	client := proto.NewAuctionClient(conn)
-	bid_ack, err := client.Bid(context.Background(), &proto.BidAmount{BidAmount: 10, Bidder: 1})
-	if err != nil {
-		log.Println(err)
-	} else {
-		if bid_ack.Accepted {
-			log.Println("Bid accepted")
-		} else {
-			log.Println("Bid denied")
-		}
-	}
+	wait_group.Add(1)
+	go get_input(bufio.NewReader(bufio.NewReader(os.Stdin)), client)
+	wait_group.Wait()
+}
 
-	bid_ack, err = client.Bid(context.Background(), &proto.BidAmount{BidAmount: 10, Bidder: 2})
-	if err != nil {
-		log.Println(err)
-	} else {
-		if bid_ack.Accepted {
-			log.Println("Bid accepted")
-		} else {
-			log.Println("Bid denied")
+func get_input(reader *bufio.Reader, client proto.AuctionClient) {
+	defer wait_group.Done()
+	for {
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
 
-	auction_result, err := client.Result(context.Background(), &proto.Empty{})
-	if !auction_result.AuctionOver {
-		log.Printf("highest bidder %d with bid %d\n", auction_result.HighestBidder, auction_result.HighestBid)
-	} else {
-		log.Printf("Auction over. Highest bidder %d with bid %d\n", auction_result.HighestBidder, auction_result.HighestBid)
+		input = strings.TrimSpace(input)
+		if input == ".quit" {
+			log.Printf("Closing client %d\n", id)
+			return
+		} else if input == "state" {
+			result, err := client.Result(context.Background(), &proto.Empty{})
+			if err != nil {
+				log.Println(err)
+			}
+			if result.AuctionOver {
+				fmt.Printf("Auction over. %d won with a bid of %d\n", result.HighestBidder, result.HighestBid)
+			} else {
+				fmt.Printf("Auction running. %d is the highest bidder with a bid of %d\n", result.HighestBidder, result.HighestBid)
+			}
+		} else if strings.Split(input, " ")[0] == "bid" {
+			var bid int64 = 0
+			if len(strings.Split(input, " ")) > 1 {
+				bid, _ = strconv.ParseInt(strings.Split(input, " ")[1], 10, 64)
+			}
+			response, err := client.Bid(context.Background(), &proto.BidAmount{
+				Bidder:    id,
+				BidAmount: bid,
+			})
+			if err != nil {
+				log.Println(err)
+			} else {
+				if response.Accepted {
+					fmt.Printf("Bid of %d accepted\n", bid)
+				} else {
+					fmt.Printf("Bid of %d denied\n", bid)
+				}
+			}
+		}
+
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }

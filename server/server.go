@@ -194,13 +194,20 @@ func (s *AuctionService) StartElection(ctx context.Context, identity *proto.Repl
 			}
 			// This replica won the election
 			s.leader_id = s.id
+
+			// Find newest state amongst the replicas and use that state
 			for _, server := range s.servers {
 				state, _ := server.ElectionFinished(context.Background(), &proto.Leader{
 					Id: s.id,
 				})
 				if state.Identity.Timestamp > s.timestamp {
-					// Newer state
+					s.UpdateReplica(context.Background(), state)
 				}
+			}
+
+			// Update all of the other replicas with the newest state
+			for _, server := range s.servers {
+				go server.UpdateReplica(context.Background(), s.GetState())
 			}
 		}()
 	}
@@ -208,7 +215,7 @@ func (s *AuctionService) StartElection(ctx context.Context, identity *proto.Repl
 }
 
 func (s *AuctionService) ElectionFinished(ctx context.Context, leader *proto.Leader) (*proto.ReplicaState, error) {
-
+	s.leader_id = leader.Id
 	return &proto.ReplicaState{}, nil
 }
 
