@@ -3,6 +3,7 @@ package main
 import (
 	proto "auction/grpc"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 /*
@@ -108,10 +110,10 @@ func (s *AuctionService) update_timestamp(timestamp_in int64) {
 	s.timestamp += 1
 }
 
-func (s *AuctionService) Bid(context context.Context, bid *proto.BidAmount) (*proto.BidAck, error) {
+func (s *AuctionService) Bid(ctx context.Context, bid *proto.BidAmount) (*proto.BidAck, error) {
 	if s.id != s.leader_id {
 		log.Println("Propogating request to leader")
-		return s.servers[s.leader_id].Bid(context, bid)
+		return s.servers[s.leader_id].Bid(ctx, bid)
 	}
 	if !s.auction_running {
 		return &proto.BidAck{Accepted: false}, errors.New("auction not running")
@@ -124,6 +126,7 @@ func (s *AuctionService) Bid(context context.Context, bid *proto.BidAmount) (*pr
 		s.highest_bidder = bid.Bidder
 		for _, server := range s.servers {
 			log.Printf("Updating server %d\n", server)
+			server.UpdateReplica(context.Background(), s.GetState())
 		}
 		return &proto.BidAck{Accepted: true}, nil
 	}
@@ -131,7 +134,7 @@ func (s *AuctionService) Bid(context context.Context, bid *proto.BidAmount) (*pr
 	return &proto.BidAck{Accepted: false}, nil
 }
 
-func (s *AuctionService) Result(context context.Context, _ *proto.Empty) (*proto.AuctionResult, error) {
+func (s *AuctionService) Result(ctx context.Context, _ *proto.Empty) (*proto.AuctionResult, error) {
 	return &proto.AuctionResult{
 		HighestBid:    s.highest_bid,
 		HighestBidder: s.highest_bidder,
@@ -140,17 +143,61 @@ func (s *AuctionService) Result(context context.Context, _ *proto.Empty) (*proto
 	}, nil
 }
 
-func (s *AuctionService) UpdateReplica(context context.Context, state *proto.ReplicaState) (*proto.Empty, error) {
+func (s *AuctionService) ReplicaConnected(ctx context.Context, replica_info *proto.ReplicaConnection) (*proto.ReplicaState, error) {
+	if s.id != s.leader_id {
+		// Propogate to leader
+		state, err := s.servers[s.leader_id].ReplicaConnected(ctx, replica_info)
+		// If leader approves, add new connection to server map
+		if err == nil {
+			host_url := fmt.Sprintf("localhost:%d", replica_info.Port)
+			conn, err := grpc.NewClient(host_url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				log.Fatal(err)
+			}
+			s.servers[replica_info.Id] = proto.NewAuctionClient(conn)
+		}
+		return state, err
+	}
+	_, occupied := s.servers[replica_info.Id]
+	if occupied {
+		return nil, errors.New("server id already occupied")
+	}
+	host_url := fmt.Sprintf("localhost:%d", replica_info.Port)
+	conn, err := grpc.NewClient(host_url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	s.servers[replica_info.Id] = proto.NewAuctionClient(conn)
 
+	return s.GetState(), nil
+}
+
+func (s *AuctionService) UpdateReplica(ctx context.Context, state *proto.ReplicaState) (*proto.Empty, error) {
+	s.auction_running = !state.AuctionFinished
+	s.highest_bid = state.HighestBid
+	s.highest_bidder = state.HighestBidder
+	s.timestamp = state.Identity.Timestamp
 	return &proto.Empty{}, nil
 }
 
-func (s *AuctionService) StartElection(context context.Context, identity *proto.ReplicaIdentity) (*proto.ElectionResponse, error) {
+func (s *AuctionService) StartElection(ctx context.Context, identity *proto.ReplicaIdentity) (*proto.ElectionResponse, error) {
 
 	return &proto.ElectionResponse{}, nil
 }
 
-func (s *AuctionService) ElectionFinished(context context.Context, leader *proto.Leader) (*proto.ReplicaState, error) {
+func (s *AuctionService) ElectionFinished(ctx context.Context, leader *proto.Leader) (*proto.ReplicaState, error) {
 
 	return &proto.ReplicaState{}, nil
+}
+
+func (s *AuctionService) GetState() *proto.ReplicaState {
+	return &proto.ReplicaState{
+		Identity: &proto.ReplicaIdentity{
+			Id:        s.id,
+			Timestamp: s.timestamp,
+		},
+		HighestBidder:   s.highest_bidder,
+		HighestBid:      s.highest_bid,
+		AuctionFinished: !s.auction_running,
+	}
 }
