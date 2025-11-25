@@ -18,29 +18,31 @@ import (
 
 type AuctionService struct {
 	proto.UnimplementedAuctionServer
-	mutex           sync.Mutex
-	servers         map[int64]proto.AuctionClient
-	replicas        []*proto.ReplicaConnection
-	leader_id       int64
-	id              int64
-	next_client     int64
-	highest_bid     int64
-	highest_bidder  int64
-	auction_running bool
-	timestamp       int64
+	mutex             sync.Mutex
+	servers           map[int64]proto.AuctionClient
+	replicas          []*proto.ReplicaConnection
+	leader_id         int64
+	id                int64
+	next_client       int64
+	highest_bid       int64
+	highest_bidder    int64
+	auction_running   bool
+	timestamp         int64
+	election_finished chan struct{}
 }
 
 func main() {
 	server := &AuctionService{
-		id:              0,
-		leader_id:       0,
-		timestamp:       0,
-		next_client:     0,
-		highest_bid:     0,
-		highest_bidder:  -1, // -1 means no bidder
-		auction_running: false,
-		servers:         make(map[int64]proto.AuctionClient),
-		replicas:        make([]*proto.ReplicaConnection, 0),
+		id:                0,
+		leader_id:         0,
+		timestamp:         0,
+		next_client:       0,
+		highest_bid:       0,
+		highest_bidder:    -1, // -1 means no bidder
+		auction_running:   false,
+		servers:           make(map[int64]proto.AuctionClient),
+		replicas:          make([]*proto.ReplicaConnection, 0),
+		election_finished: nil,
 	}
 
 	server.start_server()
@@ -120,6 +122,10 @@ func (s *AuctionService) leader_monitor() {
 				Id:        s.id,
 				Timestamp: s.timestamp,
 			})
+			s.mutex.Lock()
+			s.election_finished = make(chan struct{})
+			s.mutex.Unlock()
+			<-s.election_finished
 		}
 		time.Sleep(2 * time.Second)
 	}
@@ -182,9 +188,23 @@ func (s *AuctionService) GetClientId(ctx context.Context, _ *proto.Empty) (*prot
 func (s *AuctionService) Bid(ctx context.Context, bid *proto.BidAmount) (*proto.BidAck, error) {
 	if s.id != s.leader_id {
 		log.Printf("Propogating bid request from %d of %d to leader\n", bid.Bidder, bid.BidAmount)
+		s.mutex.Lock()
 		s.timestamp += 1
+		s.mutex.Unlock()
 		bid.Timestamp = s.timestamp
-		return s.servers[s.leader_id].Bid(ctx, bid)
+		response, err := s.servers[s.leader_id].Bid(ctx, bid)
+		if err != nil {
+			s.StartElection(context.Background(), &proto.ReplicaIdentity{
+				Id:        s.id,
+				Timestamp: s.timestamp,
+			})
+			s.mutex.Lock()
+			s.election_finished = make(chan struct{})
+			s.mutex.Unlock()
+			<-s.election_finished
+			return s.servers[s.leader_id].Bid(ctx, bid)
+		}
+		return response, err
 	}
 	if !s.auction_running {
 		return &proto.BidAck{Accepted: false, ErrorMessage: "Auction not running"}, nil
@@ -207,7 +227,20 @@ func (s *AuctionService) Bid(ctx context.Context, bid *proto.BidAmount) (*proto.
 func (s *AuctionService) Result(ctx context.Context, empty *proto.Empty) (*proto.AuctionResult, error) {
 	if s.id != s.leader_id {
 		log.Printf("Propogating result request to leader\n")
-		return s.servers[s.leader_id].Result(ctx, empty)
+
+		response, err := s.servers[s.leader_id].Result(ctx, empty)
+		if err != nil {
+			s.StartElection(context.Background(), &proto.ReplicaIdentity{
+				Id:        s.id,
+				Timestamp: s.timestamp,
+			})
+			s.mutex.Lock()
+			s.election_finished = make(chan struct{})
+			s.mutex.Unlock()
+			<-s.election_finished
+			return s.servers[s.leader_id].Result(ctx, empty)
+		}
+		return response, err
 	}
 	log.Printf("Sending auction result")
 	s.mutex.Lock()
@@ -355,6 +388,7 @@ func (s *AuctionService) StartElection(ctx context.Context, identity *proto.Repl
 func (s *AuctionService) ElectionFinished(ctx context.Context, leader *proto.Id) (*proto.ReplicaState, error) {
 	log.Printf("Election finished. Setting new leader to replica with id %d", leader.Id)
 	s.leader_id = leader.Id
+	close(s.election_finished)
 	return s.GetState(), nil
 }
 
