@@ -1,0 +1,27 @@
+2025/11/25 18:06:07 Client started with id 0
+2025/11/25 18:06:11 Got input 'state'
+2025/11/25 18:06:11 Auction running. -1 is the highest bidder with a bid of 0
+2025/11/25 18:06:14 Got input 'bid 15'
+2025/11/25 18:06:14 Bid of 15 accepted
+2025/11/25 18:06:29 Got input 'bid 15'
+2025/11/25 18:06:29 Got error message Auction not running
+2025/11/25 18:06:32 Got input 'state'
+2025/11/25 18:06:32 Auction over. 0 won with a bid of 15
+2025/11/25 18:06:40 Got input 'bid 15'
+2025/11/25 18:06:40 Bid of 15 accepted
+2025/11/25 18:06:51 Got input 'bid 20'
+2025/11/25 18:06:51 Connection lost. Reconnecting and retrying...
+2025/11/25 18:06:51 Connecting to server localhost:8081
+2025/11/25 18:06:51 Connected!
+2025/11/25 18:06:51 Bid of 20 accepted
+2025/11/25 18:07:03 Got input 'state'
+2025/11/25 18:07:03 Auction running. 1 is the highest bidder with a bid of 25
+2025/11/25 18:07:21 Got input 'state'
+2025/11/25 18:07:21 Connection lost. Reconnecting and retrying...
+2025/11/25 18:07:21 Connecting to server localhost:8080
+2025/11/25 18:07:24 Connection failed
+2025/11/25 18:07:24 Connecting to server localhost:8082
+2025/11/25 18:07:24 Connected!
+2025/11/25 18:07:24 Auction running. -1 is the highest bidder with a bid of 0
+2025/11/25 18:07:36 Got input 'state'
+2025/11/25 18:07:36 Auction running. 1 is the highest bidder with a bid of 15

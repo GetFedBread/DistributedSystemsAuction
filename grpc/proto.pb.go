@@ -448,6 +448,7 @@ type ReplicaState struct {
 	HighestBidder   int64                  `protobuf:"varint,3,opt,name=highest_bidder,json=highestBidder,proto3" json:"highest_bidder,omitempty"`
 	HighestBid      int64                  `protobuf:"varint,4,opt,name=highest_bid,json=highestBid,proto3" json:"highest_bid,omitempty"`
 	AuctionFinished bool                   `protobuf:"varint,5,opt,name=auction_finished,json=auctionFinished,proto3" json:"auction_finished,omitempty"`
+	NextClient      int64                  `protobuf:"varint,6,opt,name=next_client,json=nextClient,proto3" json:"next_client,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -515,6 +516,13 @@ func (x *ReplicaState) GetAuctionFinished() bool {
 		return x.AuctionFinished
 	}
 	return false
+}
+
+func (x *ReplicaState) GetNextClient() int64 {
+	if x != nil {
+		return x.NextClient
+	}
+	return 0
 }
 
 type ElectionResponse struct {
@@ -684,14 +692,16 @@ const file_proto_proto_rawDesc = "" +
 	"\bresponse\x18\x06 \x01(\v2\a.BidAckR\bresponse\"?\n" +
 	"\x0fReplicaIdentity\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\xdf\x01\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\x80\x02\n" +
 	"\fReplicaState\x12,\n" +
 	"\bidentity\x18\x01 \x01(\v2\x10.ReplicaIdentityR\bidentity\x12.\n" +
 	"\breplicas\x18\x02 \x03(\v2\x12.ReplicaConnectionR\breplicas\x12%\n" +
 	"\x0ehighest_bidder\x18\x03 \x01(\x03R\rhighestBidder\x12\x1f\n" +
 	"\vhighest_bid\x18\x04 \x01(\x03R\n" +
 	"highestBid\x12)\n" +
-	"\x10auction_finished\x18\x05 \x01(\bR\x0fauctionFinished\"9\n" +
+	"\x10auction_finished\x18\x05 \x01(\bR\x0fauctionFinished\x12\x1f\n" +
+	"\vnext_client\x18\x06 \x01(\x03R\n" +
+	"nextClient\"9\n" +
 	"\x10ElectionResponse\x12%\n" +
 	"\x0esender_greater\x18\x01 \x01(\bR\rsenderGreater\"\x14\n" +
 	"\x02Id\x12\x0e\n" +

@@ -1,0 +1,26 @@
+2025/11/25 18:06:04 Server started on [::]:8080
+2025/11/25 18:06:04 Auction started
+2025/11/25 18:06:04 Updating replicas
+2025/11/25 18:06:04 Updating replicas
+2025/11/25 18:06:04 Connected new replica with id 1 on port 8081
+2025/11/25 18:06:04 Updating replicas
+2025/11/25 18:06:04 Connected new replica with id 2 on port 8082
+2025/11/25 18:06:07 New client with id 0
+2025/11/25 18:06:09 New client with id 1
+2025/11/25 18:06:11 Sending auction result
+2025/11/25 18:06:14 Accepting bid from 0 for 15
+2025/11/25 18:06:14 Updating replicas
+2025/11/25 18:06:16 Sending auction result
+2025/11/25 18:06:24 Auction over
+2025/11/25 18:06:24 Updating replicas
+2025/11/25 18:06:25 Sending auction result
+2025/11/25 18:06:32 Sending auction result
+2025/11/25 18:06:34 Auction started
+2025/11/25 18:06:34 Updating replicas
+2025/11/25 18:06:38 Accepting bid from 1 for 10
+2025/11/25 18:06:38 Updating replicas
+2025/11/25 18:06:40 Accepting bid from 0 for 15
+2025/11/25 18:06:40 Updating replicas
+2025/11/25 18:06:44 Declining bid from 1 for 12
+2025/11/25 18:06:49 Server stopped with logical time stamp 13
+2025/11/25 18:06:49 ---------------------------------------------------------------

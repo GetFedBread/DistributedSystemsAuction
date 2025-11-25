@@ -50,6 +50,7 @@ message ReplicaState {
     int64 highest_bidder = 3;
     int64 highest_bid = 4;
     bool auction_finished = 5;
+    int64 next_client = 6;
 }
 
 message ElectionResponse {

@@ -119,7 +119,7 @@ func connect() proto.AuctionClient {
 	// Infinite loop if no server is running, but in that case we got bigger problems
 	for {
 		for _, server := range servers {
-			conn, err := grpc.Dial(server, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.NewClient(server, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				log.Printf("Server not found: %v\n", server)
 				continue
@@ -136,9 +136,6 @@ func connect() proto.AuctionClient {
 			}
 			if len(response.Replicas) > 0 {
 				servers = response.Replicas
-				for _, s := range servers {
-					fmt.Println(s)
-				}
 			}
 
 			log.Printf("Connected!")
