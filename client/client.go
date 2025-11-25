@@ -33,6 +33,13 @@ func main() {
 	// Assumes that the server that was established connection to has not immediately crashed
 	response, _ := client.GetClientId(context.Background(), &proto.Empty{})
 	id = response.Id
+	// Setup file logging
+	f, err := os.OpenFile(fmt.Sprintf("clientlog%d.txt", id), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
 
 	log.Printf("Client started with id %d\n", id)
 

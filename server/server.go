@@ -18,27 +18,19 @@ import (
 
 type AuctionService struct {
 	proto.UnimplementedAuctionServer
-	mutex              sync.Mutex
-	servers            map[int64]proto.AuctionClient
-	replicas           []*proto.ReplicaConnection
-	leader_id          int64
-	id                 int64
-	previous_responses map[int64]proto.AuctionResult
-	next_client        int64
-	highest_bid        int64
-	highest_bidder     int64
-	auction_running    bool
-	timestamp          int64
+	mutex           sync.Mutex
+	servers         map[int64]proto.AuctionClient
+	replicas        []*proto.ReplicaConnection
+	leader_id       int64
+	id              int64
+	next_client     int64
+	highest_bid     int64
+	highest_bidder  int64
+	auction_running bool
+	timestamp       int64
 }
 
 func main() {
-	/*f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	log.SetOutput(f)*/
 	server := &AuctionService{
 		id:              0,
 		leader_id:       0,
@@ -79,6 +71,13 @@ func (s *AuctionService) start_server() {
 		})
 		s.id++
 	}
+	// Setup file logging
+	f, err := os.OpenFile(fmt.Sprintf("serverlog%d.txt", s.id), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
 
 	if s.id != s.leader_id {
 		state, err := s.servers[s.leader_id].ReplicaConnected(context.Background(), &proto.ReplicaConnection{
