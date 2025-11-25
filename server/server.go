@@ -181,7 +181,8 @@ func (s *AuctionService) GetClientId(ctx context.Context, _ *proto.Empty) (*prot
 func (s *AuctionService) Bid(ctx context.Context, bid *proto.BidAmount) (*proto.BidAck, error) {
 	if s.id != s.leader_id {
 		log.Println("Propogating request to leader")
-		bid.Timestamp = s.timestamp + 1
+		s.timestamp += 1
+		bid.Timestamp = s.timestamp
 		return s.servers[s.leader_id].Bid(ctx, bid)
 	}
 	if !s.auction_running {
@@ -203,12 +204,16 @@ func (s *AuctionService) Bid(ctx context.Context, bid *proto.BidAmount) (*proto.
 }
 
 func (s *AuctionService) Result(ctx context.Context, _ *proto.Empty) (*proto.AuctionResult, error) {
-	return &proto.AuctionResult{
+	s.mutex.Lock()
+	s.timestamp += 1
+	result := &proto.AuctionResult{
 		HighestBid:    s.highest_bid,
 		HighestBidder: s.highest_bidder,
 		AuctionOver:   !s.auction_running,
 		Timestamp:     s.timestamp,
-	}, nil
+	}
+	s.mutex.Unlock()
+	return result, nil
 }
 
 func (s *AuctionService) GetReplicaList(ctx context.Context, _ *proto.Empty) (*proto.ReplicaList, error) {
@@ -240,6 +245,7 @@ func (s *AuctionService) ReplicaConnected(ctx context.Context, replica_info *pro
 	s.mutex.Lock()
 	s.servers[replica_info.Id] = proto.NewAuctionClient(conn)
 	s.replicas = append(s.replicas, replica_info)
+	s.timestamp += 1
 	s.mutex.Unlock()
 
 	s.UpdateReplicas()
@@ -269,6 +275,7 @@ func (s *AuctionService) UpdateReplica(ctx context.Context, state *proto.Replica
 			s.servers[replica.Id] = proto.NewAuctionClient(conn)
 		}
 	}
+	s.timestamp += 1
 
 	s.mutex.Unlock()
 	return &proto.Empty{}, nil
@@ -319,6 +326,9 @@ func (s *AuctionService) StartElection(ctx context.Context, identity *proto.Repl
 			}
 		}
 		s.UpdateReplica(context.Background(), newest_state)
+		s.mutex.Lock()
+		s.timestamp += 1
+		s.mutex.Unlock()
 
 		// Re-startup the auction if it was running
 		go s.start_auctioning(s.auction_running, true)
