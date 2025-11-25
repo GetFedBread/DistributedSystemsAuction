@@ -11,6 +11,7 @@ message BidAmount {
 message BidAck {
     bool accepted = 1;
     int64 timestamp = 2;
+    string error_message = 3; // Used if auction is not running
 }
 
 message AuctionResult {
@@ -45,24 +46,32 @@ message ReplicaIdentity {
 
 message ReplicaState {
     ReplicaIdentity identity = 1;
-    int64 highest_bidder = 2;
-    int64 highest_bid = 3;
-    bool auction_finished = 4;
+    repeated ReplicaConnection replicas = 2;
+    int64 highest_bidder = 3;
+    int64 highest_bid = 4;
+    bool auction_finished = 5;
 }
 
 message ElectionResponse {
     bool sender_greater = 1;
 }
 
-message Leader {
+message Id {
     int64 id = 1;
+}
+
+message ReplicaList {
+    repeated string replicas = 1; // List of server URLs
 }
 
 service Auction {
     rpc Bid (BidAmount) returns (BidAck);
     rpc Result (Empty)  returns (AuctionResult);
+    rpc GetClientId(Empty) returns (Id);
+    rpc GetReplicaList(Empty) returns (ReplicaList);
     rpc ReplicaConnected (ReplicaConnection) returns (ReplicaState);
     rpc UpdateReplica (ReplicaState) returns (Empty);
     rpc StartElection (ReplicaIdentity) returns (ElectionResponse);
-    rpc ElectionFinished (Leader) returns (ReplicaState);
+    rpc ElectionFinished (Id) returns (ReplicaState);
+    rpc WellnessCheck (Empty) returns (Empty); // Used by replicas to check if the leader is still running
 }
