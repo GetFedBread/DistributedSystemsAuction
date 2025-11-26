@@ -417,6 +417,6 @@ func (s *AuctionService) UpdateReplicas() {
 	log.Println("Updating replicas")
 	state := s.GetState()
 	for _, server := range s.servers {
-		go server.UpdateReplica(context.Background(), state)
+		server.UpdateReplica(context.Background(), state)
 	}
 }
